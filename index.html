@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ Lịch Ôn Thi</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Saira+Condensed:wght@300;600;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0c10;
+    --panel: #0f1318;
+    --border: #1e2530;
+    --accent-ly: #00e5ff;
+    --accent-hoa: #ff6b35;
+    --accent-nghi: #6bcb77;
+    --text: #e8eaf0;
+    --text-dim: #5a6070;
+    --glow-ly: 0 0 20px rgba(0,229,255,0.4);
+    --glow-hoa: 0 0 20px rgba(255,107,53,0.4);
+    --glow-nghi: 0 0 20px rgba(107,203,119,0.4);
+  }
+
+  body {
+    font-family: 'Saira Condensed', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 14px;
+    margin-bottom: 24px;
+  }
+
+  .header-title {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .live-clock {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    color: var(--text);
+    letter-spacing: 2px;
+  }
+
+  .current-session {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 28px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .current-session.ly  { border-color: var(--accent-ly);   box-shadow: var(--glow-ly); }
+  .current-session.hoa { border-color: var(--accent-hoa);  box-shadow: var(--glow-hoa); }
+  .current-session.nghi{ border-color: var(--accent-nghi); box-shadow: var(--glow-nghi); }
+
+  .current-session::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    transition: background 0.3s;
+  }
+  .current-session.ly::before   { background: var(--accent-ly); }
+  .current-session.hoa::before  { background: var(--accent-hoa); }
+  .current-session.nghi::before { background: var(--accent-nghi); }
+
+  .session-tag {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 6px;
+    opacity: 0.6;
+  }
+
+  .session-subject {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 8px;
+    transition: color 0.3s;
+  }
+  .ly   .session-subject { color: var(--accent-ly); }
+  .hoa  .session-subject { color: var(--accent-hoa); }
+  .nghi .session-subject { color: var(--accent-nghi); }
+
+  .session-content-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  .timer-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .countdown {
+    font-family: 'Space Mono', monospace;
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -2px;
+    transition: color 0.3s;
+  }
+  .ly   .countdown { color: var(--accent-ly); }
+  .hoa  .countdown { color: var(--accent-hoa); }
+  .nghi .countdown { color: var(--accent-nghi); }
+
+  .countdown.warning { animation: pulse-warn 0.8s ease-in-out infinite; }
+
+  @keyframes pulse-warn {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .progress-bar-wrap { flex: 1; min-width: 160px; }
+
+  .progress-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s linear, background 0.3s;
+  }
+  .ly   .progress-fill { background: var(--accent-ly); }
+  .hoa  .progress-fill { background: var(--accent-hoa); }
+  .nghi .progress-fill { background: var(--accent-nghi); }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text-dim);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .btn:hover { border-color: var(--text-dim); color: var(--text); }
+  .btn.primary { border-color: var(--accent-ly); color: var(--accent-ly); }
+  .btn.primary:hover { background: rgba(0,229,255,0.08); }
+
+  .schedule-header {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .schedule-list { display: flex; flex-direction: column; gap: 4px; }
+
+  .schedule-item {
+    display: grid;
+    grid-template-columns: 110px 90px 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    transition: all 0.25s;
+    cursor: pointer;
+    background: rgba(255,255,255,0.01);
+  }
+
+  .schedule-item:hover { background: rgba(255,255,255,0.03); border-color: var(--border); }
+
+  .schedule-item.active          { background: rgba(0,229,255,0.05);   border-color: var(--accent-ly); }
+  .schedule-item.active.hoa-act  { background: rgba(255,107,53,0.05);  border-color: var(--accent-hoa); }
+  .schedule-item.active.nghi-act { background: rgba(107,203,119,0.04); border-color: var(--accent-nghi); }
+  .schedule-item.done { opacity: 0.3; }
+
+  .s-time { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); }
+
+  .s-badge {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    text-align: center;
+  }
+  .badge-ly   { color: var(--accent-ly);   background: rgba(0,229,255,0.1); }
+  .badge-hoa  { color: var(--accent-hoa);  background: rgba(255,107,53,0.1); }
+  .badge-nghi { color: var(--accent-nghi); background: rgba(107,203,119,0.1); }
+
+  .s-desc {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+  }
+  .schedule-item.active .s-desc { color: var(--text); }
+
+  .total-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+  .total-label { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 2px; color: var(--text-dim); white-space: nowrap; }
+  .total-bar-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; }
+  .total-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-ly), var(--accent-hoa)); border-radius: 2px; transition: width 1s linear; }
+  .total-pct { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text); min-width: 36px; text-align: right; }
+
+  /* ALERT */
+  .alert-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .alert-overlay.show { opacity: 1; pointer-events: all; }
+
+  .alert-box {
+    text-align: center;
+    padding: 48px;
+    border: 1px solid;
+    background: var(--panel);
+    border-radius: 4px;
+    max-width: 460px;
+    width: 90%;
+    animation: alertIn 0.3s ease;
+  }
+  @keyframes alertIn {
+    from { transform: scale(0.88); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+  }
+  .alert-box.ly   { border-color: var(--accent-ly);   box-shadow: var(--glow-ly); }
+  .alert-box.hoa  { border-color: var(--accent-hoa);  box-shadow: var(--glow-hoa); }
+  .alert-box.nghi { border-color: var(--accent-nghi); box-shadow: var(--glow-nghi); }
+
+  .alert-icon  { font-size: 52px; margin-bottom: 16px; }
+  .alert-title { font-size: 36px; font-weight: 800; margin-bottom: 10px; }
+  .alert-sub   { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 28px; line-height: 2; }
+
+  .alert-btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 14px 36px;
+    border: 1px solid currentColor;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .alert-btn:hover { background: rgba(255,255,255,0.05); }
+
+  /* SET TIME MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 8888;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+
+  .modal-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 36px;
+    min-width: 340px;
+  }
+  .modal-title { font-size: 22px; font-weight: 800; margin-bottom: 22px; }
+  .modal-label { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 10px; display: block; }
+  .modal-input {
+    font-family: 'Space Mono', monospace;
+    font-size: 32px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 16px;
+    border-radius: 2px;
+    width: 100%;
+    margin-bottom: 22px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .modal-input:focus { border-color: var(--accent-ly); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+  @media (max-width: 600px) {
+    .countdown { font-size: 48px; }
+    .session-subject { font-size: 36px; }
+    .schedule-item { grid-template-columns: 90px 60px 1fr; gap: 8px; }
+    .s-desc { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-title">⚡ Study Session Tracker</div>
+    <div class="live-clock" id="liveClock">--:--:--</div>
+  </header>
+
+  <div class="total-bar">
+    <span class="total-label">TIẾN ĐỘ ĐÊM NAY</span>
+    <div class="total-bar-track"><div class="total-bar-fill" id="totalFill" style="width:0%"></div></div>
+    <span class="total-pct" id="totalPct">0%</span>
+  </div>
+
+  <div class="current-session" id="currentCard">
+    <div class="session-tag" id="sessionTag">PHIÊN HIỆN TẠI</div>
+    <div class="session-subject" id="sessionSubject">SẴN SÀNG</div>
+    <div class="session-content-text" id="sessionContent">Nhấn SET GIỜ để bắt đầu theo dõi lịch học</div>
+    <div class="timer-row">
+      <div class="countdown" id="countdown">--:--</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-label">THỜI GIAN CÒN LẠI</div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:100%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn primary" onclick="openModal()">⏱ SET GIỜ HIỆN TẠI</button>
+    <button class="btn" onclick="prevSession()">← PHIÊN TRƯỚC</button>
+    <button class="btn" onclick="nextSession()">PHIÊN SAU →</button>
+    <button class="btn" id="soundBtn" onclick="toggleSound()">🔔 ÂM THANH: BẬT</button>
+  </div>
+
+  <div class="schedule-header">LỊCH ÔN TẬP — 21:00 → 05:30</div>
+  <div class="schedule-list" id="scheduleList"></div>
+</div>
+
+<!-- ALERT -->
+<div class="alert-overlay" id="alertOverlay">
+  <div class="alert-box" id="alertBox">
+    <div class="alert-icon" id="alertIcon">⏰</div>
+    <div class="alert-title" id="alertTitle">HẾT GIỜ!</div>
+    <div class="alert-sub" id="alertSub"></div>
+    <button class="alert-btn" id="alertBtn" onclick="dismissAlert()">OK, BẮT ĐẦU →</button>
+  </div>
+</div>
+
+<!-- SET TIME MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-title">⏱ Đặt giờ hiện tại</div>
+    <label class="modal-label">NHẬP GIỜ THỰC TẾ NGAY LÚC NÀY</label>
+    <input class="modal-input" type="time" id="timeInput">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">HỦY</button>
+      <button class="btn primary" onclick="confirmTime()">XÁC NHẬN</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== SCHEDULE =====
+// times in minutes from midnight; after midnight = +1440
+const S = [
+  { start:21*60,      end:21*60+50, subject:'LÝ',       type:'ly',    content:'Ôn công thức: điện trường, hiệu điện thế, lực Coulomb + 2–3 bài cơ bản' },
+  { start:21*60+50,   end:22*60,    subject:'NGHỈ',      type:'nghi',  content:'Đi lại, uống nước' },
+  { start:22*60,      end:22*60+50, subject:'HÓA',       type:'hoa',   content:'Ôn lý thuyết + các dạng bài hay ra' },
+  { start:22*60+50,   end:23*60,    subject:'NGHỈ',      type:'nghi',  content:'Nghỉ mắt' },
+  { start:23*60,      end:23*60+50, subject:'LÝ',        type:'ly',    content:'Làm bài tập vận dụng' },
+  { start:23*60+50,   end:24*60,    subject:'NGHỈ',      type:'nghi',  content:'Reset nhanh' },
+  { start:24*60,      end:24*60+50, subject:'HÓA',       type:'hoa',   content:'Bài tập mol / nồng độ / bảo toàn' },
+  { start:24*60+50,   end:25*60,    subject:'NGHỈ',      type:'nghi',  content:'Đi lại nhẹ' },
+  { start:25*60,      end:25*60+50, subject:'LÝ',        type:'ly',    content:'Tổng hợp công thức + bài tập nhanh' },
+  { start:25*60+50,   end:26*60+10, subject:'NGHỈ DÀI',  type:'nghi',  content:'Ăn nhẹ / rửa mặt' },
+  { start:26*60+10,   end:27*60,    subject:'HÓA',       type:'hoa',   content:'Làm bài tổng hợp hoặc đề' },
+  { start:27*60,      end:27*60+10, subject:'NGHỈ',      type:'nghi',  content:'Thư giãn' },
+  { start:27*60+10,   end:28*60,    subject:'LÝ',        type:'ly',    content:'Ôn lại các bài sai / dạng khó' },
+  { start:28*60,      end:28*60+10, subject:'NGHỈ',      type:'nghi',  content:'Nghỉ mắt' },
+  { start:28*60+10,   end:29*60,    subject:'HÓA',       type:'hoa',   content:'Ôn phản ứng + công thức' },
+  { start:29*60,      end:29*60+30, subject:'REVIEW',    type:'ly',    content:'15 phút Lý công thức + 15 phút Hóa lý thuyết' },
+];
+
+function fmtMins(m) {
+  const h = Math.floor(m/60)%24, mn = m%60;
+  return String(h).padStart(2,'0')+':'+String(mn).padStart(2,'0');
+}
+
+let idx = -1, sessStart = null, sessDur = 0, soundOn = true;
+
+function nowMins() {
+  const n = new Date();
+  let m = n.getHours()*60 + n.getMinutes();
+  if (m < 8*60) m += 24*60;
+  return m;
+}
+
+function renderList() {
+  const list = document.getElementById('scheduleList');
+  list.innerHTML = '';
+  S.forEach((s,i) => {
+    const div = document.createElement('div');
+    let cls = 'schedule-item';
+    if (i < idx) cls += ' done';
+    if (i === idx) {
+      cls += ' active';
+      if (s.type==='hoa') cls += ' hoa-act';
+      if (s.type==='nghi') cls += ' nghi-act';
+    }
+    div.className = cls;
+    div.onclick = () => jumpTo(i);
+    const bc = s.type==='hoa'?'badge-hoa':s.type==='nghi'?'badge-nghi':'badge-ly';
+    const done = i < idx ? '✓ ' : '';
+    div.innerHTML = `
+      <div class="s-time">${fmtMins(s.start)}–${fmtMins(s.end)}</div>
+      <div class="s-badge ${bc}">${s.subject}</div>
+      <div class="s-desc">${done}${s.content}</div>
+    `;
+    list.appendChild(div);
+  });
+  // scroll active into view
+  const active = list.querySelector('.active');
+  if (active) active.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function updateCard() {
+  if (idx<0||idx>=S.length) return;
+  const s = S[idx];
+  const card = document.getElementById('currentCard');
+  card.className = 'current-session '+s.type;
+  document.getElementById('sessionTag').textContent = `PHIÊN ${idx+1} / ${S.length}`;
+  document.getElementById('sessionSubject').textContent = s.subject;
+  document.getElementById('sessionContent').textContent = s.content;
+}
+
+function jumpTo(i) {
+  idx = i;
+  const s = S[i];
+  sessDur = (s.end - s.start)*60;
+  sessStart = Date.now();
+  updateCard(); renderList();
+}
+
+function nextSession() { if(idx < S.length-1) jumpTo(idx+1); }
+function prevSession() { if(idx > 0) jumpTo(idx-1); }
+
+function tick() {
+  // live clock
+  const now = new Date();
+  document.getElementById('liveClock').textContent =
+    now.toLocaleTimeString('vi-VN',{hour12:false});
+
+  if (idx<0 || !sessStart) return;
+
+  const elapsed = (Date.now()-sessStart)/1000;
+  const rem = Math.max(0, sessDur - elapsed);
+  const mins = Math.floor(rem/60), secs = Math.floor(rem%60);
+  const cd = document.getElementById('countdown');
+  cd.textContent = String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
+  cd.className = 'countdown' + (rem<=60&&rem>0?' warning':'');
+
+  document.getElementById('progressFill').style.width = (rem/sessDur*100)+'%';
+
+  // total
+  const ts = S[0].start, te = S[S.length-1].end;
+  const tot = (te-ts)*60;
+  const done = (S[idx].start - ts)*60 + (sessDur-rem);
+  const pct = Math.min(100, Math.max(0, done/tot*100));
+  document.getElementById('totalFill').style.width = pct.toFixed(1)+'%';
+  document.getElementById('totalPct').textContent = Math.floor(pct)+'%';
+
+  if (rem<=0) showAlert();
+}
+
+let alerted = false;
+function showAlert() {
+  if (alerted) return;
+  alerted = true;
+  if (soundOn) beep();
+  const next = S[idx+1];
+  const box = document.getElementById('alertBox');
+  box.className = 'alert-box '+(next?next.type:'nghi');
+  document.getElementById('alertIcon').textContent = next?(next.type==='nghi'?'😴':'📚'):'🎉';
+  document.getElementById('alertTitle').textContent = next?`BẮT ĐẦU ${next.subject}!`:'XONG RỒI! 🎉';
+  document.getElementById('alertSub').textContent = next
+    ? `${next.content}\n${fmtMins(next.start)} → ${fmtMins(next.end)}`
+    : 'Bạn đã hoàn thành toàn bộ lịch học đêm nay!\nNgủ ngon và thi tốt! 💪';
+  const btn = document.getElementById('alertBtn');
+  btn.textContent = next?'OK, BẮT ĐẦU →':'ĐÓNG';
+  btn.style.color = next?(next.type==='hoa'?'var(--accent-hoa)':next.type==='nghi'?'var(--accent-nghi)':'var(--accent-ly)'):'var(--accent-nghi)';
+  document.getElementById('alertOverlay').classList.add('show');
+}
+
+function dismissAlert() {
+  alerted = false;
+  document.getElementById('alertOverlay').classList.remove('show');
+  nextSession();
+}
+
+function openModal() {
+  const n = new Date();
+  document.getElementById('timeInput').value =
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+
+function confirmTime() {
+  const val = document.getElementById('timeInput').value;
+  if (!val) return;
+  const [h,m] = val.split(':').map(Number);
+  let nm = h*60+m;
+  if (nm < 8*60) nm += 24*60;
+
+  let found = -1;
+  for (let i=0;i<S.length;i++) {
+    if (nm>=S[i].start && nm<S[i].end) { found=i; break; }
+  }
+  if (found===-1) {
+    for (let i=0;i<S.length;i++) {
+      if (S[i].start > nm) { found=i; break; }
+    }
+    if (found===-1) found = S.length-1;
+  }
+
+  idx = found;
+  const s = S[found];
+  sessDur = (s.end - s.start)*60;
+  const elapsedSecs = Math.max(0, (nm - s.start)*60 + new Date().getSeconds());
+  sessStart = Date.now() - elapsedSecs*1000;
+  alerted = false;
+  updateCard(); renderList(); closeModal();
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('soundBtn').textContent = soundOn?'🔔 ÂM THANH: BẬT':'🔕 ÂM THANH: TẮT';
+}
+
+function beep() {
+  try {
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    [880,1100,880,1320].forEach((f,i) => {
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value=f; o.type='sine';
+      const t=ctx.currentTime+i*0.22;
+      g.gain.setValueAtTime(0.35,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.18);
+      o.start(t); o.stop(t+0.22);
+    });
+  } catch(e){}
+}
+
+// ===== INIT =====
+renderList();
+// Auto-detect
+(function() {
+  const nm = nowMins();
+  let found = -1;
+  for (let i=0;i<S.length;i++) {
+    if (nm>=S[i].start && nm<S[i].end) { found=i; break; }
+  }
+  if (found>=0) {
+    idx = found;
+    const s = S[found];
+    const n = new Date();
+    const elapsedSecs = (nm - s.start)*60 + n.getSeconds();
+    sessDur = (s.end-s.start)*60;
+    sessStart = Date.now() - elapsedSecs*1000;
+    updateCard(); renderList();
+  }
+})();
+
+setInterval(tick, 1000);
+tick();
+</script>
+</body>
+</html>
